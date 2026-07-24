@@ -1,151 +1,127 @@
-// ============================================================
-// 暗香盈袖 · 酒馆 UI 增强脚本
-// 为 SillyTavern 注入暗黑风格状态栏和增强界面
-// ============================================================
+// 暗香盈袖 UI v2 — 酒馆状态栏增强
+// 通过 jsDelivr CDN 加载，增强正则模板渲染的状态栏
 
-(function() {
-'use strict';
+function injectStyles() {
+  if (document.getElementById('ax-styles')) return;
+  const css = document.createElement('style');
+  css.id = 'ax-styles';
+  css.textContent = `
+    /* 增强 .hs 状态栏卡片 */
+    .hs {
+      border: 1px solid rgba(196,32,63,0.3) !important;
+      box-shadow: 0 0 40px rgba(196,32,63,0.08), 0 8px 32px rgba(0,0,0,0.5) !important;
+      transition: box-shadow 0.3s ease !important;
+    }
+    .hs:hover {
+      box-shadow: 0 0 60px rgba(196,32,63,0.15), 0 12px 40px rgba(0,0,0,0.6) !important;
+    }
+    .hs::before {
+      content: '' !important;
+      display: block !important;
+      height: 3px !important;
+      background: linear-gradient(90deg, #c4203f, #b8944e, #7b3fa3, #c4203f) !important;
+    }
+    .hs-badge {
+      color: #c4203f !important;
+      font-weight: 700 !important;
+    }
 
-// ======== STYLES ========
-const CSS = `
-/* 状态栏暗黑增强 - 匹配正则模板 .hs 系列类名 */
-.hs {
-  width: 96%; max-width: 680px; margin: 14px auto;
-  background: #06060d !important; border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 16px !important; overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 60px rgba(196,32,63,0.06) !important;
-  font-family: "PingFang SC","Microsoft YaHei","Noto Sans SC","Hiragino Sans GB",sans-serif !important;
-}
-.hs-head {
-  background: linear-gradient(160deg,#0a0218,#140820 35%,#1a0828 65%,#0d0418) !important;
-  padding: 18px 22px !important;
-  border-bottom: 1px solid rgba(155,48,255,0.08) !important;
-}
-.hs-time {
-  font-size: 18px !important; font-weight: 700 !important; color: #ede4f4 !important;
-  text-shadow: 0 1px 6px rgba(155,48,255,0.15) !important;
-}
-.hs-loc { font-size: 13px !important; color: #807090 !important; margin-top: 5px !important; }
-.hs-badge {
-  position: absolute; top: 14px; right: 22px; font-size: 8px;
-  color: rgba(196,32,63,0.35) !important; letter-spacing: 3px; font-weight: 700 !important;
-}
-.hs-body {
-  padding: 16px 20px !important; font-size: 13px !important;
-  line-height: 1.8 !important; color: #c0aec8 !important;
-  max-height: 520px; overflow-y: auto;
-}
-.hs-body::selection { background: rgba(196,32,63,0.3); color: #f0d0d0; }
-.hs::-webkit-scrollbar { width: 5px; }
-.hs::-webkit-scrollbar-track { background: transparent; }
-.hs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    /* 聊天文本增强 */
+    .mes_text {
+      line-height: 1.75 !important;
+      font-size: 14px !important;
+    }
 
-/* 增强阴影和辉光 */
-.hs:hover { box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 0 80px rgba(196,32,63,0.08) !important; }
-
-/* 增强聊天文本 */
-.mes_text { line-height: 1.75 !important; font-size: 14px !important; }
-`;
-
-// ======== INJECT CSS ========
-function injectCSS() {
-  if (document.getElementById('tavern-ui-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'tavern-ui-styles';
-  style.textContent = CSS;
-  document.head.appendChild(style);
+    /* 操作按钮样式 */
+    .ax-action-btn {
+      display: inline-block;
+      margin: 2px 4px;
+      padding: 4px 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.03);
+      color: #807090;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .ax-action-btn:hover {
+      background: rgba(196,32,63,0.15);
+      color: #e8e0f0;
+      border-color: rgba(196,32,63,0.3);
+    }
+  `;
+  document.head.appendChild(css);
 }
 
-// ======== PARSE STATUS BLOCK ========
-function parseStatusBlock(text) {
-  const result = { date: '', location: '', characters: [], actions: [] };
+// 扫描并增强已渲染的状态栏
+function enhanceStatusCards() {
+  const cards = document.querySelectorAll('.hs:not([data-ax])');
+  cards.forEach(card => {
+    card.setAttribute('data-ax', '1');
 
-  const dateMatch = text.match(/日期和时间:\s*"[^"]*?([\d\/]+\s*[\d:]+)/);
-  if (dateMatch) result.date = dateMatch[1].trim();
+    // 解析角色列表，为每个角色的行动选项添加可点击按钮
+    const body = card.querySelector('.hs-body');
+    if (!body) return;
 
-  const locMatch = text.match(/地点:\s*"[^"]*?([^"]+)/);
-  if (locMatch) result.location = locMatch[1].trim();
+    const text = body.textContent || '';
+    const actionMatch = text.match(/行动选项[\s\S]*?选项:([\s\S]*?)$/);
+    if (!actionMatch) return;
 
-  // Parse character blocks
-  const charBlocks = text.split(/\n\s*- 用户:/).slice(1);
-  result.characters = charBlocks.map(block => {
-    const ch = {};
-    const m = (key) => {
-      const r = block.match(new RegExp(key + ':\\s*"([^"]*)"'));
-      return r ? r[1].trim() : null;
-    };
-    const name = m('名字');
-    if (!name) return null;
-    ch.name = name;
-    const act = m('行动'); if (act) ch.action = act;
-    const inner = m('内心'); if (inner) ch.inner = inner;
-    const wear = m('穿搭'); if (wear) ch.wear = wear;
-    const pussy = m('小穴'); if (pussy) ch.pussy = pussy;
-    const chest = m('胸部'); if (chest) ch.chest = chest;
-    const ass = m('肛门'); if (ass) ch.ass = ass;
-    const mouth = m('嘴'); if (mouth) ch.mouth = mouth;
-    const dick = m('阳具'); if (dick) ch.dick = dick;
-    const recent = m('最近性行为'); if (recent) ch.recent = recent;
-    return ch;
-  }).filter(Boolean);
-
-  // Parse actions
-  const actSection = text.match(/行动选项:[\s\S]*?选项:\s*\n([\s\S]*?)$/);
-  if (actSection) {
-    result.actions = actSection[1]
+    const actions = actionMatch[1]
       .split('\n')
-      .filter(l => /^\s*-/.test(l))
+      .filter(l => l.match(/^\s*-\s*"/))
       .map(l => l.replace(/^\s*-\s*"\d+\.\s*/, '').replace(/"$/, '').trim());
-  }
 
-  return result;
+    if (actions.length === 0) return;
+
+    // 创建操作按钮区域
+    const btnContainer = document.createElement('div');
+    btnContainer.style.cssText = 'padding:8px 20px 12px;border-top:1px solid rgba(255,255,255,0.04);';
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:10px;color:#504868;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;';
+    title.textContent = '快捷操作';
+    btnContainer.appendChild(title);
+
+    actions.forEach((action, i) => {
+      const btn = document.createElement('span');
+      btn.className = 'ax-action-btn';
+      btn.textContent = (i + 1) + '. ' + action;
+      btn.title = '点击复制到输入框';
+      btn.addEventListener('click', () => {
+        // 尝试填入酒馆输入框
+        const input = document.getElementById('send_textarea') || document.querySelector('textarea');
+        if (input) {
+          input.value = action;
+          input.focus();
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+      btnContainer.appendChild(btn);
+    });
+
+    card.appendChild(btnContainer);
+  });
 }
 
-// ======== RENDER STATUS CARD ========
-function renderStatusCard(data) {
-  let charsHTML = data.characters.map(ch => {
-    let rows = '';
-    if (ch.action) rows += `<div class="sb-row"><span class="sb-lb">行动</span><span class="sb-vl">${escapeHTML(ch.action)}</span></div>`;
-    if (ch.inner) rows += `<div class="sb-row"><span class="sb-lb">内心</span><span class="sb-vl inner">${escapeHTML(ch.inner)}</span></div>`;
-    if (ch.wear) rows += `<div class="sb-row"><span class="sb-lb">穿着</span><span class="sb-vl">${escapeHTML(ch.wear)}</span></div>`;
-    if (ch.pussy) rows += `<div class="sb-row"><span class="sb-lb">小穴</span><span class="sb-vl">${escapeHTML(ch.pussy)}</span></div>`;
-    if (ch.chest) rows += `<div class="sb-row"><span class="sb-lb">胸部</span><span class="sb-vl">${escapeHTML(ch.chest)}</span></div>`;
-    if (ch.ass) rows += `<div class="sb-row"><span class="sb-lb">肛门</span><span class="sb-vl">${escapeHTML(ch.ass)}</span></div>`;
-    if (ch.mouth) rows += `<div class="sb-row"><span class="sb-lb">嘴</span><span class="sb-vl">${escapeHTML(ch.mouth)}</span></div>`;
-    if (ch.dick) rows += `<div class="sb-row"><span class="sb-lb">阳具</span><span class="sb-vl">${escapeHTML(ch.dick)}</span></div>`;
-    return `<div class="sb-ch"><div class="sb-cn">${escapeHTML(ch.name)}</div>${rows}</div>`;
-  }).join('');
-
-  let actionsHTML = '';
-  if (data.actions.length > 0) {
-    actionsHTML = data.actions.map((a, i) => {
-      const safeAction = escapeHTML(a).replace(/'/g, "\\'");
-      return `<div class="sb-row" style="padding:4px 8px;cursor:pointer;border-radius:4px;margin:2px 0;color:#786890;font-size:11px;transition:all .15s" onclick="this.style.background='rgba(255,255,255,0.04)';this.style.color='#e8e0f0'" onmouseover="this.style.background='rgba(255,255,255,0.03)';this.style.color='#e8e0f0'" onmouseout="this.style.background='transparent';this.style.color='#786890'" title="点击复制">${i+1}. ${safeAction}</div>`;
-    }).join('');
-  }
-
-  return `<div class="sb-premium">
-    <div class="sb-hd">
-      <div class="sb-badge">STATUS</div>
-      <div class="sb-dt">${escapeHTML(data.date)}</div>
-      <div class="sb-loc">${escapeHTML(data.location)}</div>
-    </div>
-    <div class="sb-bd">
-      ${charsHTML}
-      ${actionsHTML ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);font-size:10px;color:#504868;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">行动选项</div>' + actionsHTML : ''}
-    </div>
-  </div>`;
+// 监听 DOM 变化
+function watchDOM() {
+  const observer = new MutationObserver(() => {
+    enhanceStatusCards();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
-function escapeHTML(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-
-// ======== INIT ========
+// 初始化
 function init() {
-  injectCSS();
-  console.log("%c暗香盈袖 UI 已注入 %cv1.1","color:#c4203f;font-size:14px;font-weight:bold;","color:#786890;");
+  injectStyles();
+  enhanceStatusCards();
+  watchDOM();
+  console.log('%c暗香盈袖 UI v2 已注入', 'color:#c4203f;font-weight:bold;');
 }
-if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
-}}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
