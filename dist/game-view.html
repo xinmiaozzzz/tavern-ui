@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>暗香盈袖</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08080f;--card:#0d0d1a;--hd:linear-gradient(160deg,#0a0218,#140820 35%,#1a0828 65%,#0d0418);--border:rgba(255,255,255,0.07);--accent:#c4203f;--gold:#b8944e;--t1:#e8e0f0;--t2:#b8a8c8;--t3:#786890;--t4:#504868;--div:rgba(255,255,255,0.04)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t2);font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden;height:100vh}
+#app{display:flex;height:100vh}
+#sidebar{width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.side-hd{padding:16px 20px;background:var(--hd);border-bottom:1px solid var(--border);position:relative}
+.side-hd::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--gold),#7b3fa3,var(--accent))}
+.side-title{font-family:"Noto Serif SC",serif;font-size:16px;font-weight:700;color:var(--t1);letter-spacing:0.05em}
+.side-sub{font-size:10px;color:var(--t4);margin-top:2px;letter-spacing:0.06em}
+.side-chars{flex:1;overflow-y:auto;padding:8px}
+.char-mini{padding:10px 12px;margin:4px 0;border:1px solid transparent;border-radius:8px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px}
+.char-mini:hover,.char-mini.active{background:rgba(196,32,63,0.06);border-color:rgba(196,32,63,0.2)}
+.char-av{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:"Noto Serif SC",serif;font-size:16px;font-weight:700;flex-shrink:0}
+.char-av.f{background:linear-gradient(135deg,#2d1835,#1f1030);border:1px solid rgba(180,100,140,0.2);color:#c89090}
+.char-av.m{background:linear-gradient(135deg,#1a2530,#101820);border:1px solid rgba(100,140,180,0.2);color:#8ab}
+.char-nm{font-size:13px;font-weight:600;color:var(--t1)}.char-rl{font-size:10px;color:var(--t4)}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#chat-area{flex:1;overflow-y:auto;padding:20px 24px}
+.msg{margin-bottom:16px;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.narrator{text-align:center;color:var(--t4);font-family:"Noto Serif SC",serif;font-style:italic;font-size:14px;max-width:500px;margin:12px auto}
+.msg.char{display:flex;gap:12px;max-width:85%}
+.msg-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Noto Serif SC",serif;font-size:14px;font-weight:700;flex-shrink:0}
+.msg-av.f{background:linear-gradient(135deg,#2d1835,#1f1030);color:#c89090}
+.msg-bubble{background:var(--card);border:1px solid var(--border);border-radius:6px 14px 14px 14px;padding:12px 16px;line-height:1.75;font-size:14px;color:var(--t1)}
+.msg-inner{margin-top:8px;padding:8px 12px;background:rgba(196,32,63,0.05);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;font-size:12px;color:#c89090;line-height:1.6;cursor:pointer}
+.msg-inner::before{content:'里层';font-size:9px;font-weight:700;color:var(--accent);display:block;margin-bottom:4px;letter-spacing:0.06em;text-transform:uppercase}
+#status-panel{width:300px;background:var(--card);border-left:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.stat-hd{padding:14px 18px;background:var(--hd);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.stat-hd::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--gold),#7b3fa3,var(--accent))}
+.stat-title{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:0.04em}
+.stat-card{margin:8px 12px;padding:12px;background:rgba(255,255,255,0.015);border:1px solid var(--div);border-radius:8px}
+.stat-name{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--div)}
+.stat-row{display:flex;gap:6px;margin:3px 0;line-height:1.5;font-size:11px}
+.stat-lb{color:var(--t4);min-width:30px;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.04em}
+.stat-vl{color:var(--t2)}.stat-vl.inner{color:#c89090}
+#input-bar{padding:12px 20px;border-top:1px solid var(--border);background:var(--card);display:flex;gap:10px}
+#input-bar textarea{flex:1;background:#0d0d1a;border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--t1);font-family:inherit;font-size:14px;resize:none;outline:none;min-height:44px;max-height:120px;transition:all .15s}
+#input-bar textarea:focus{border-color:rgba(196,32,63,0.4);box-shadow:0 0 0 3px rgba(196,32,63,0.08)}
+#send-btn{width:44px;height:44px;border-radius:10px;border:none;background:linear-gradient(135deg,#c4203f,#a01a32);color:#fff;cursor:pointer;font-size:18px;transition:all .15s;flex-shrink:0}
+#send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(196,32,63,0.3)}
+#send-btn:active{transform:scale(0.95)}
+.actions-panel{margin:8px 12px;padding:12px;background:rgba(255,255,255,0.02);border:1px solid var(--div);border-radius:8px}
+.act-title{font-size:10px;color:var(--t4);font-weight:700;letter-spacing:0.06em;margin-bottom:6px;text-transform:uppercase}
+.act-btn{display:block;width:100%;margin:2px 0;padding:8px 12px;border:1px solid rgba(255,255,255,0.05);border-radius:6px;background:rgba(255,255,255,0.02);color:var(--t3);font-size:12px;cursor:pointer;text-align:left;transition:all .15s;font-family:inherit}
+.act-btn:hover{background:rgba(196,32,63,0.1);color:var(--t1);border-color:rgba(196,32,63,0.3)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style></head><body>
+<div id="app">
+<div id="sidebar">
+<div class="side-hd"><div class="side-title">暗香盈袖</div><div class="side-sub">HAOSHU · 真相揭露期</div></div>
+<div class="side-chars">
+<div class="char-mini active"><div class="char-av f">颖</div><div><div class="char-nm">白颖</div><div class="char-rl">妻子 · 在场</div></div></div>
+<div class="char-mini"><div class="char-av f">萱</div><div><div class="char-nm">李萱诗</div><div class="char-rl">母亲 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av m">郝</div><div><div class="char-nm">郝江化</div><div class="char-rl">继父 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av f">琳</div><div><div class="char-nm">徐琳</div><div class="char-rl">闺蜜 · 长沙</div></div></div>
+<div class="char-mini"><div class="char-av m">天</div><div><div class="char-nm">郝小天</div><div class="char-rl">干弟弟 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av f">芸</div><div><div class="char-nm">王诗芸</div><div class="char-rl">情人 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av f">月</div><div><div class="char-nm">何晓月</div><div class="char-rl">管家 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av f">彤</div><div><div class="char-nm">吴彤</div><div class="char-rl">情人 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av f">薇</div><div><div class="char-nm">岑筱薇</div><div class="char-rl">秘书 · 郝家沟</div></div></div>
+<div class="char-mini"><div class="char-av f">慧</div><div><div class="char-nm">童佳慧</div><div class="char-rl">岳母 · 北京</div></div></div>
+</div></div>
+<div id="main">
+<div id="chat-area">
+<div class="msg narrator">2011年9月，北京首都机场T3航站楼。自动门开合之间，到达口的冷气一阵阵涌出来。左京已经在栏杆外站了四十分钟。</div>
+<div class="msg narrator">然后他看见了她。白颖推着银灰色行李箱，从到达通道深处走出来。驼色羊毛开衫，牛仔裤裹着修长的腿。踏入他视线的前一秒，她的步子顿了一下。</div>
+<div class="msg char"><div class="msg-av f">颖</div><div><div class="msg-bubble">想你了。</div><div class="msg-inner">她把脸埋在他颈窝里。但她在希思罗淋浴间里站了整整一个小时——滚烫的水浇透全身，指腹反复抠挖身体深处。原先那件被撕破领口的开衫，塞进了剑桥某栋别墅门外的垃圾桶。</div></div></div>
+<div class="msg narrator">左京低下头，闻到陌生的茉莉沐浴液气味。太干净了——没有长途飞行后的酸涩黏腻。"飞机上睡得好吗？""嗯，一直在睡。"她撒谎。</div>
+<div class="msg char"><div class="msg-av f">颖</div><div><div class="msg-bubble">京哥，回家了。</div><div class="msg-inner">她从不在外人面前叫他京哥。这是一种过度补偿——刚从一个叫她"颖颖宝贝"的男人床上下来，必须加倍回归"京哥的妻子"。但夹紧的双腿间，蝴蝶屄深处内壁仍在阵阵痉挛。不是因为冷，是因为空。</div></div></div>
+</div>
+<div id="input-bar"><textarea id="user-input" placeholder="输入左京的行动..." rows="1"></textarea><button id="send-btn">↑</button></div>
+</div>
+<div id="status-panel">
+<div class="stat-hd"><div class="stat-title">实时状态</div></div>
+<div id="status-content">
+<div class="stat-card"><div class="stat-name">白颖</div><div class="stat-row"><span class="stat-lb">行动</span><span class="stat-vl">刚从剑桥回国，扑进左京怀里</span></div><div class="stat-row"><span class="stat-lb">内心</span><span class="stat-vl inner">老公来接我了...但我这半年在剑桥的每一天都是谎言</span></div><div class="stat-row"><span class="stat-lb">穿着</span><span class="stat-vl">驼色羊毛开衫+牛仔裤，大腿淤青被遮瑕膏盖了三层</span></div><div class="stat-row"><span class="stat-lb">小穴</span><span class="stat-vl">蝴蝶屄深处空虚痉挛，被彻底清洗后内壁仍在收缩</span></div><div class="stat-row"><span class="stat-lb">胸部</span><span class="stat-vl">D罩杯，乳头因回想粗暴揉捏而微微挺立</span></div><div class="stat-row"><span class="stat-lb">肛门</span><span class="stat-vl">紧窄——最后防线「除非左京同意」</span></div></div>
+<div class="stat-card"><div class="stat-name">左京</div><div class="stat-row"><span class="stat-lb">行动</span><span class="stat-vl">在到达口等了四十分钟，接过行李箱</span></div><div class="stat-row"><span class="stat-lb">内心</span><span class="stat-vl inner">她眼睛红了两次。拥抱太用力了。头发上有陌生的香味。</span></div><div class="stat-row"><span class="stat-lb">阳具</span><span class="stat-vl">疲软，久别重逢的激动中毫无反应</span></div></div>
+<div class="actions-panel"><div class="act-title">行动选项</div><button class="act-btn">1. 装作什么都没注意到，接过行李箱直接去停车场</button><button class="act-btn">2. 在电梯口停下来，认真看她一眼，问她怎么了</button><button class="act-btn">3. 注意到她走路的姿势有些不同——双腿夹得比平时紧</button><button class="act-btn">4. 把她拉进怀里深深吻住她的嘴</button></div>
+</div></div></div>
+<script>
+const input=document.getElementById('user-input');
+const send=document.getElementById('send-btn');
+const chat=document.getElementById('chat-area');
+function addMsg(type,text,inner){
+  const d=document.createElement('div');
+  if(type==='narrator'){d.className='msg narrator';d.textContent=text}
+  else if(type==='char'){d.className='msg char';d.innerHTML='<div class="msg-av f">颖</div><div><div class="msg-bubble">'+text+'</div>'+(inner?'<div class="msg-inner">'+inner+'</div>':'')+'</div>'}
+  else if(type==='user'){d.className='msg char';d.style.justifyContent='flex-end';d.innerHTML='<div><div class="msg-bubble" style="background:rgba(184,148,78,0.06);border-color:rgba(184,148,78,0.15)">'+text+'</div></div>'}
+  chat.appendChild(d);chat.scrollTop=chat.scrollHeight
+}
+send.addEventListener('click',()=>{const t=input.value.trim();if(!t)return;addMsg('user',t);input.value='';input.style.height='auto';fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})}).then(r=>r.json()).then(d=>{if(d.content){const mm=d.content.match(/<maintext>([\s\S]*?)<\/maintext>/);if(mm){addMsg('narrator',mm[1].trim())}}})});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click()}});
+</script></body></html>
